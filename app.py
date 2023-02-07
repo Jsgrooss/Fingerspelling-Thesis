@@ -61,7 +61,7 @@ def main():
     mp_hands = mp.solutions.hands
     hands = mp_hands.Hands(
         static_image_mode=use_static_image_mode,
-        max_num_hands=1,
+        max_num_hands=2,
         min_detection_confidence=min_detection_confidence,
         min_tracking_confidence=min_tracking_confidence,
     )
@@ -76,6 +76,12 @@ def main():
         keypoint_classifier_labels = csv.reader(f)
         keypoint_classifier_labels = [
             row[0] for row in keypoint_classifier_labels
+        ]
+    with open('model/keypoint_classifier/keypoint_classifier_label_singleHand.csv',
+              encoding='utf-8-sig') as f:
+        keypoint_classifier_labels_singleHand = csv.reader(f)
+        keypoint_classifier_labels_singleHand = [
+            row[0] for row in keypoint_classifier_labels_singleHand
         ]
     with open(
             'model/point_history_classifier/point_history_classifier_label.csv',
@@ -121,53 +127,134 @@ def main():
         results = hands.process(image)
         image.flags.writeable = True
 
+        '''newLandMarkList = []
+        
+        if results.multi_hand_landmarks is not None:
+            if len(results.multi_hand_landmarks) == 2:
+                for handsMarks in results.multi_hand_landmarks:
+                    for _, landmark in enumerate(handsMarks.landmark):
+                        newLandMarkList.append(landmark)
+
+        testBrect = calc_bounding_rect2(debug_image, newLandMarkList)'''
+
         #  ####################################################################
         if results.multi_hand_landmarks is not None:
-            for hand_landmarks, handedness in zip(results.multi_hand_landmarks,
-                                                  results.multi_handedness):
-                # Bounding box calculation
-                brect = calc_bounding_rect(debug_image, hand_landmarks)
-                # Landmark calculation
-                landmark_list = calc_landmark_list(debug_image, hand_landmarks)
+            if len(results.multi_hand_landmarks) == 2:
+                for hand_landmarks, handedness in zip(results.multi_hand_landmarks,
+                                                      results.multi_handedness):
 
-                # Conversion to relative coordinates / normalized coordinates
-                pre_processed_landmark_list = pre_process_landmark(
-                    landmark_list)
-                pre_processed_point_history_list = pre_process_point_history(
-                    debug_image, point_history)
-                # Write to the dataset file
-                logging_csv(number, mode, pre_processed_landmark_list,
+
+                    newLandMarkList = []
+                    for handsMarks in results.multi_hand_landmarks:
+                        for _, landmark in enumerate(handsMarks.landmark):
+                            newLandMarkList.append(landmark)
+
+
+                    # Bounding box calculation
+                    testBrect = calc_bounding_rect2(debug_image, newLandMarkList)
+                    #brect = calc_bounding_rect(debug_image, hand_landmarks)
+
+                    # Landmark calculation
+                    landmark_list = calc_landmark_list(debug_image, hand_landmarks)
+                    testLandmark_list = calc_landmark_list2(debug_image, newLandMarkList)
+
+                    # Conversion to relative coordinates / normalized coordinates
+                    #pre_processed_landmark_listOld = pre_process_landmark(landmark_list)
+                    pre_processed_landmark_listNew = pre_process_landmark2(testLandmark_list)
+                    pre_processed_point_history_list = pre_process_point_history(debug_image, point_history)
+
+
+
+                    # Write to the dataset file
+                    logging_csv(number, mode, pre_processed_landmark_listNew,
+                                pre_processed_point_history_list)
+
+                    # Hand sign classification
+                    hand_sign_id = keypoint_classifier(pre_processed_landmark_listNew)
+                    if hand_sign_id == 'Ignore this for now':  # Point gesture
+                        #point_history.append(landmark_list[8])
+                        break
+                    else:
+                        point_history.append([0, 0])
+
+                    # Finger gesture classification
+                    finger_gesture_id = 0
+                    point_history_len = len(pre_processed_point_history_list)
+                    if point_history_len == (history_length * 2):
+                        finger_gesture_id = point_history_classifier(
                             pre_processed_point_history_list)
 
-                # Hand sign classification
-                hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
-                if hand_sign_id == 2:  # Point gesture
-                    point_history.append(landmark_list[8])
-                else:
-                    point_history.append([0, 0])
+                    # Calculates the gesture IDs in the latest detection
+                    finger_gesture_history.append(finger_gesture_id)
+                    most_common_fg_id = Counter(finger_gesture_history).most_common()
 
-                # Finger gesture classification
-                finger_gesture_id = 0
-                point_history_len = len(pre_processed_point_history_list)
-                if point_history_len == (history_length * 2):
-                    finger_gesture_id = point_history_classifier(
-                        pre_processed_point_history_list)
+                    # Drawing part
+                    #debug_image = draw_bounding_rect(use_brect, debug_image, brect)
+                    debug_image = draw_bounding_rect(use_brect, debug_image, testBrect)
+                    debug_image = draw_landmarks(debug_image, landmark_list)
+                    #debug_image = draw_landmarks(debug_image, newLandMarkList)
+                    '''debug_image = draw_info_text(
+                        debug_image,
+                        brect,
+                        handedness,
+                        keypoint_classifier_labels[hand_sign_id],
+                        point_history_classifier_labels[most_common_fg_id[0][0]],
+                    )'''
+                    debug_image = draw_info_text(
+                        debug_image,
+                        testBrect,
+                        handedness,
+                        keypoint_classifier_labels[hand_sign_id],
+                        point_history_classifier_labels[most_common_fg_id[0][0]],
+                    )   
+            elif len(results.multi_hand_landmarks) == 1:
+                for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
 
-                # Calculates the gesture IDs in the latest detection
-                finger_gesture_history.append(finger_gesture_id)
-                most_common_fg_id = Counter(
-                    finger_gesture_history).most_common()
+                    
+                    # Bounding box calculation
+                    brect = calc_bounding_rect(debug_image, hand_landmarks)
 
-                # Drawing part
-                debug_image = draw_bounding_rect(use_brect, debug_image, brect)
-                debug_image = draw_landmarks(debug_image, landmark_list)
-                debug_image = draw_info_text(
-                    debug_image,
-                    brect,
-                    handedness,
-                    keypoint_classifier_labels[hand_sign_id],
-                    point_history_classifier_labels[most_common_fg_id[0][0]],
-                )
+                    # Landmark calculation
+                    landmark_list = calc_landmark_list(debug_image, hand_landmarks)
+
+                    # Conversion to relative coordinates / normalized coordinates
+                    pre_processed_landmark_list = pre_process_landmark(landmark_list)
+                    pre_processed_point_history_list = pre_process_point_history(debug_image, point_history)
+
+                    # Write to the dataset file
+                    logging_csv(number, mode, pre_processed_landmark_list,
+                                pre_processed_point_history_list)
+
+                    # Hand sign classification
+                    hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
+                    if hand_sign_id == 'Ignore this for now':  # Point gesture
+                        #point_history.append(landmark_list[8])
+                        break
+                    else:
+                        point_history.append([0, 0])
+
+                    # Finger gesture classification
+                    finger_gesture_id = 0
+                    point_history_len = len(pre_processed_point_history_list)
+                    if point_history_len == (history_length * 2):
+                        finger_gesture_id = point_history_classifier(
+                            pre_processed_point_history_list)
+
+                    # Calculates the gesture IDs in the latest detection
+                    finger_gesture_history.append(finger_gesture_id)
+                    most_common_fg_id = Counter(finger_gesture_history).most_common()
+
+                    # Drawing part
+                    debug_image = draw_bounding_rect(use_brect, debug_image, brect)
+                    debug_image = draw_landmarks(debug_image, landmark_list)
+                    debug_image = draw_info_text(
+                        debug_image,
+                        brect,
+                        handedness,
+                        keypoint_classifier_labels[hand_sign_id],
+                        point_history_classifier_labels[most_common_fg_id[0][0]],
+                    )
+                    break
         else:
             point_history.append([0, 0])
 
@@ -191,6 +278,8 @@ def select_mode(key, mode):
         mode = 1
     if key == 104:  # h
         mode = 2
+    if key == 32:
+        number = 2
     return number, mode
 
 
@@ -211,6 +300,24 @@ def calc_bounding_rect(image, landmarks):
 
     return [x, y, x + w, y + h]
 
+def calc_bounding_rect2(image, landmarks):
+    image_width, image_height = image.shape[1], image.shape[0]
+
+    landmark_array = np.empty((0, 2), int)
+
+    for landmark in landmarks:
+        landmark_x = min(int(landmark.x * image_width), image_width - 1)
+        landmark_y = min(int(landmark.y * image_height), image_height - 1)
+
+        landmark_point = [np.array((landmark_x, landmark_y))]
+
+        landmark_array = np.append(landmark_array, landmark_point, axis=0)
+
+    x, y, w, h = cv.boundingRect(landmark_array)
+
+    return [x, y, x + w, y + h]
+
+
 
 def calc_landmark_list(image, landmarks):
     image_width, image_height = image.shape[1], image.shape[0]
@@ -219,6 +326,22 @@ def calc_landmark_list(image, landmarks):
 
     # Keypoint
     for _, landmark in enumerate(landmarks.landmark):
+        landmark_x = min(int(landmark.x * image_width), image_width - 1)
+        landmark_y = min(int(landmark.y * image_height), image_height - 1)
+        # landmark_z = landmark.z
+
+        landmark_point.append([landmark_x, landmark_y])
+
+    return landmark_point
+
+
+def calc_landmark_list2(image, landmarks):
+    image_width, image_height = image.shape[1], image.shape[0]
+
+    landmark_point = []
+
+    # Keypoint
+    for landmark in landmarks:
         landmark_x = min(int(landmark.x * image_width), image_width - 1)
         landmark_y = min(int(landmark.y * image_height), image_height - 1)
         # landmark_z = landmark.z
@@ -255,6 +378,32 @@ def pre_process_landmark(landmark_list):
     return temp_landmark_list
 
 
+def pre_process_landmark2(landmark_list):
+    temp_landmark_list = copy.deepcopy(landmark_list)
+
+    # Convert to relative coordinates
+    base_x, base_y = 0, 0
+    for index, landmark_point in enumerate(temp_landmark_list):
+        if index == 0:
+            base_x, base_y = landmark_point[0], landmark_point[1]
+
+        temp_landmark_list[index][0] = temp_landmark_list[index][0] - base_x
+        temp_landmark_list[index][1] = temp_landmark_list[index][1] - base_y
+
+    # Convert to a one-dimensional list
+    temp_landmark_list = list(
+        itertools.chain.from_iterable(temp_landmark_list))
+
+    # Normalization
+    max_value = max(list(map(abs, temp_landmark_list)))
+
+    def normalize_(n):
+        return n / max_value
+
+    temp_landmark_list = list(map(normalize_, temp_landmark_list))
+
+    return temp_landmark_list
+
 def pre_process_point_history(image, point_history):
     image_width, image_height = image.shape[1], image.shape[0]
 
@@ -281,8 +430,13 @@ def pre_process_point_history(image, point_history):
 def logging_csv(number, mode, landmark_list, point_history_list):
     if mode == 0:
         pass
-    if mode == 1 and (0 <= number <= 9):
+    if mode == 1 and (0 <= number <= 9) and len(landmark_list) > 50:
         csv_path = 'model/keypoint_classifier/keypoint.csv'
+        with open(csv_path, 'a', newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow([number, *landmark_list])
+    if mode == 1 and (0 <= number <= 9) and len(landmark_list) < 50:
+        csv_path = 'model/keypoint_classifier/keypoint_SingleHand.csv'
         with open(csv_path, 'a', newline="") as f:
             writer = csv.writer(f)
             writer.writerow([number, *landmark_list])
