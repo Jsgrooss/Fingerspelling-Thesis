@@ -66,7 +66,8 @@ def main():
         min_tracking_confidence=min_tracking_confidence,
     )
 
-    keypoint_classifier = KeyPointClassifier()
+    keypoint_classifier = KeyPointClassifier(model_path='model/keypoint_classifier/keypoint_classifier.tflite')
+    keypoint_classifier_single = KeyPointClassifier(model_path='model/keypoint_classifier/keypoint_classifier_SingleHand.tflite')
 
     point_history_classifier = PointHistoryClassifier()
 
@@ -100,6 +101,7 @@ def main():
 
     # Finger gesture history ################################################
     finger_gesture_history = deque(maxlen=history_length)
+    finger_gesture_historySingle = deque(maxlen=history_length)
 
     #  ########################################################################
     mode = 0
@@ -160,6 +162,7 @@ def main():
 
                     # Conversion to relative coordinates / normalized coordinates
                     #pre_processed_landmark_listOld = pre_process_landmark(landmark_list)
+                    pre_processed_landmark_listNew = []
                     pre_processed_landmark_listNew = pre_process_landmark2(testLandmark_list)
                     pre_processed_point_history_list = pre_process_point_history(debug_image, point_history)
 
@@ -171,11 +174,11 @@ def main():
 
                     # Hand sign classification
                     hand_sign_id = keypoint_classifier(pre_processed_landmark_listNew)
-                    if hand_sign_id == 'Ignore this for now':  # Point gesture
+                    #if hand_sign_id == 'Ignore this for now':  # Point gesture
                         #point_history.append(landmark_list[8])
-                        break
-                    else:
-                        point_history.append([0, 0])
+                    #    break
+                    #else:
+                        #point_history.append([0, 0])
 
                     # Finger gesture classification
                     finger_gesture_id = 0
@@ -207,6 +210,7 @@ def main():
                         keypoint_classifier_labels[hand_sign_id],
                         point_history_classifier_labels[most_common_fg_id[0][0]],
                     )   
+                    newLandMarkList.clear()
             elif len(results.multi_hand_landmarks) == 1:
                 for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
 
@@ -219,14 +223,14 @@ def main():
 
                     # Conversion to relative coordinates / normalized coordinates
                     pre_processed_landmark_list = pre_process_landmark(landmark_list)
-                    pre_processed_point_history_list = pre_process_point_history(debug_image, point_history)
+                    pre_processed_point_history_list_Single = pre_process_point_history(debug_image, point_history)
 
                     # Write to the dataset file
                     logging_csv(number, mode, pre_processed_landmark_list,
-                                pre_processed_point_history_list)
+                                pre_processed_point_history_list_Single)
 
                     # Hand sign classification
-                    hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
+                    hand_sign_id = keypoint_classifier_single(pre_processed_landmark_list)
                     if hand_sign_id == 'Ignore this for now':  # Point gesture
                         #point_history.append(landmark_list[8])
                         break
@@ -235,14 +239,14 @@ def main():
 
                     # Finger gesture classification
                     finger_gesture_id = 0
-                    point_history_len = len(pre_processed_point_history_list)
+                    point_history_len = len(pre_processed_point_history_list_Single)
                     if point_history_len == (history_length * 2):
                         finger_gesture_id = point_history_classifier(
-                            pre_processed_point_history_list)
+                            pre_processed_point_history_list_Single)
 
                     # Calculates the gesture IDs in the latest detection
-                    finger_gesture_history.append(finger_gesture_id)
-                    most_common_fg_id = Counter(finger_gesture_history).most_common()
+                    finger_gesture_historySingle.append(finger_gesture_id)
+                    most_common_fg_idSingle = Counter(finger_gesture_historySingle).most_common()
 
                     # Drawing part
                     debug_image = draw_bounding_rect(use_brect, debug_image, brect)
@@ -251,13 +255,14 @@ def main():
                         debug_image,
                         brect,
                         handedness,
-                        keypoint_classifier_labels[hand_sign_id],
-                        point_history_classifier_labels[most_common_fg_id[0][0]],
+                        keypoint_classifier_labels_singleHand[hand_sign_id],
+                        point_history_classifier_labels[most_common_fg_idSingle[0][0]],
                     )
-                    break
+                    
         else:
             point_history.append([0, 0])
 
+        #print(len(point_history))
         debug_image = draw_point_history(debug_image, point_history)
         debug_image = draw_info(debug_image, fps, mode, number)
 
@@ -275,11 +280,40 @@ def select_mode(key, mode):
     if key == 110:  # n
         mode = 0
     if key == 107:  # k
+        print("in key logging mode")
         mode = 1
     if key == 104:  # h
         mode = 2
     if key == 32:
-        number = 2
+        #Skipped H = 6, J = 8
+        '''
+        A=0
+        B=1
+        D=2
+        E=3
+        F=4
+        G=5
+        H=6
+        I=7
+        J=8
+        K=9
+        L=10
+        M=11
+        N=12
+        O=13
+        P=14
+        Q=15
+        R=16
+        S=17
+        T=18
+        U=19
+        V=20
+        W=21
+        X=22
+        Y=23
+        Z=24        
+        '''
+        number = 22
     return number, mode
 
 
@@ -430,13 +464,13 @@ def pre_process_point_history(image, point_history):
 def logging_csv(number, mode, landmark_list, point_history_list):
     if mode == 0:
         pass
-    if mode == 1 and (0 <= number <= 9) and len(landmark_list) > 50:
+    if mode == 1 and (0 <= number <= 25) and len(landmark_list) > 50:
         csv_path = 'model/keypoint_classifier/keypoint.csv'
         with open(csv_path, 'a', newline="") as f:
             writer = csv.writer(f)
             writer.writerow([number, *landmark_list])
-    if mode == 1 and (0 <= number <= 9) and len(landmark_list) < 50:
-        csv_path = 'model/keypoint_classifier/keypoint_SingleHand.csv'
+    if mode == 1 and (0 <= number <= 25) and len(landmark_list) < 50:
+        csv_path = 'model/keypoint_classifier/keypoint_singlehand.csv'
         with open(csv_path, 'a', newline="") as f:
             writer = csv.writer(f)
             writer.writerow([number, *landmark_list])
@@ -646,7 +680,7 @@ def draw_bounding_rect(use_brect, image, brect):
 
 
 def draw_info_text(image, brect, handedness, hand_sign_text,
-                   finger_gesture_text):
+                   finger_gesture_text='Hi'):
     cv.rectangle(image, (brect[0], brect[1]), (brect[2], brect[1] - 22),
                  (0, 0, 0), -1)
 
@@ -656,12 +690,12 @@ def draw_info_text(image, brect, handedness, hand_sign_text,
     cv.putText(image, info_text, (brect[0] + 5, brect[1] - 4),
                cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv.LINE_AA)
 
-    if finger_gesture_text != "":
+    '''if finger_gesture_text != "":
         cv.putText(image, "Finger Gesture:" + finger_gesture_text, (10, 60),
                    cv.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 4, cv.LINE_AA)
         cv.putText(image, "Finger Gesture:" + finger_gesture_text, (10, 60),
                    cv.FONT_HERSHEY_SIMPLEX, 1.0, (255, 255, 255), 2,
-                   cv.LINE_AA)
+                   cv.LINE_AA)'''
 
     return image
 
@@ -686,7 +720,7 @@ def draw_info(image, fps, mode, number):
         cv.putText(image, "MODE:" + mode_string[mode - 1], (10, 90),
                    cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
                    cv.LINE_AA)
-        if 0 <= number <= 9:
+        if 0 <= number <= 25:
             cv.putText(image, "NUM:" + str(number), (10, 110),
                        cv.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
                        cv.LINE_AA)
