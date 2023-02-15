@@ -7,6 +7,7 @@ import itertools
 from collections import Counter
 from collections import deque
 import random
+import string
 
 import cv2 as cv
 import numpy as np
@@ -108,13 +109,17 @@ def main():
 
     #  ########################################################################
     # 'game settings'
-    detectedSign = deque(maxlen=20)
+    detectedSign = deque(maxlen=40)
 
     #
     mode = 0
+    index = 10000
 
     detected = True
     playGame = True
+    playWithWord = False
+
+    msg = "Start"
 
     while True:
         fps = cvFpsCalc.get()
@@ -141,14 +146,34 @@ def main():
         image.flags.writeable = True
 
         if (detected == True and playGame == True):
-            imageDisplayer.number = random.randint(0, 25)    
-            #print("Number = " + str(imageDisplayer.number))
 
-            img = imageDisplayer.getImage(imageDisplayer.number)
-            resize = imageDisplayer.rescaleFrame(img, 2.0)
-            imageDisplayer.displayImage(resize)
-            #cv.waitKey(0)
-            detected = False
+            if(playWithWord == True):
+                if(index >= len(msg)):
+                    msg = imageDisplayer.getWordInput()
+                    index = 0
+
+                img = imageDisplayer.getImage(string.ascii_uppercase.index(msg.upper()[index]))
+                resize = imageDisplayer.rescaleFrame(img, 2.0)
+                imageDisplayer.displayImage(resize)
+                #cv.waitKey(0)
+                detected = False
+                detectedSign.clear
+                detectedSign.append(1000)
+
+
+
+            else:
+                imageDisplayer.number = random.randint(0, 25)    
+                #print("Number = " + str(imageDisplayer.number))
+
+                img = imageDisplayer.getImage(imageDisplayer.number)
+                resize = imageDisplayer.rescaleFrame(img, 2.0)
+                imageDisplayer.displayImage(resize)
+                #cv.waitKey(0)
+                detected = False
+                detectedSign.clear
+                detectedSign.append(1000)
+
 
         '''newLandMarkList = []
         
@@ -302,6 +327,7 @@ def main():
                     
         else:
             point_history.append([0, 0])
+            detectedSign.append(1000)
 
         #print(len(point_history))
         debug_image = draw_point_history(debug_image, point_history)
@@ -311,8 +337,15 @@ def main():
         cv.imshow('Hand Gesture Recognition', debug_image)
         if(playGame == True):
             if len(detectedSign) > 0:
-                if(imageDisplayer.checkIfCorrectSign(detectedSign) == True):
-                    detected = True
+                if(playWithWord == True):
+                    rounded = imageDisplayer.getRounded(detectedSign)
+                    inputResult = imageDisplayer.checkInputWithWord(rounded, msg, index)
+                    if(inputResult == True):
+                        index = index + 1
+                        detected = True
+                else:
+                    if(imageDisplayer.checkIfCorrectSign(detectedSign) == True):
+                        detected = True
 
 
     cap.release()

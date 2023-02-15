@@ -5,6 +5,7 @@ import cv2 as cv
 import numpy as np
 from enum import Enum
 import random
+import string
 '''
 def main():
     imgDisplayer = fingerImageDisplayer("Eng")
@@ -47,13 +48,18 @@ class fingerImageDisplayer(object):
         return cv.resize(frame, dimensions, interpolation=cv.INTER_AREA)
 
     def checkIfCorrectSign(self, detected):
-        avg = sum(detected)/len(detected)
-        rounded = round(avg)
-        print("Rounded = " + str(rounded))
-        if avg == self.number:
+        rounded = self.getRounded(detected)
+        #print("Rounded = " + str(rounded))
+        if rounded == self.number:
             return True
         else:
             return False
+
+    def getRounded(self, detected):
+        avg = sum(detected)/len(detected)
+        rounded = round(avg)
+        #print(rounded)
+        return rounded
 
     def inputFromDetected(self):
         detected = []
@@ -70,6 +76,21 @@ class fingerImageDisplayer(object):
         img = self.getImage(self.number)
         resize = self.rescaleFrame(img, 2.0)
         self.displayImage(resize)
+        
+    
+    def getWordInput(self):
+        msg = input("Write a word: ")
+        msg = msg.upper()
+        return msg
+
+
+    def checkInputWithWord(self, inp, word, index):
+        if(inp == string.ascii_uppercase.index(word.upper()[index])):
+            return True
+        else:
+            return False 
+
+
 
 #main()
 
