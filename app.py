@@ -117,7 +117,7 @@ def main():
 
     detected = True
     playGame = True
-    playWithWord = False
+    playWithWord = True
 
     msg = "Start"
 

@@ -79,9 +79,10 @@ class fingerImageDisplayer(object):
         
     
     def getWordInput(self):
-        msg = input("Write a word: ")
-        msg = msg.upper()
-        return msg
+        msg = input("Write a input: ")
+        stripped = msg.strip()
+        upper = stripped.upper()
+        return upper
 
 
     def checkInputWithWord(self, inp, word, index):
