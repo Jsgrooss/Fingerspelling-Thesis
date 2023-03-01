@@ -109,7 +109,7 @@ def main():
 
     #  ########################################################################
     # 'game settings'
-    detectedSign = deque(maxlen=40)
+    detectedSign = deque(maxlen=20)
 
     #
     mode = 0
@@ -117,7 +117,7 @@ def main():
 
     detected = True
     playGame = True
-    playWithWord = True
+    playWithWord = False
 
     msg = "Start"
 
@@ -158,10 +158,9 @@ def main():
                 #cv.waitKey(0)
                 detected = False
                 detectedSign.clear
-                detectedSign.append(1000)
-
-
-
+                for i in range(len(detectedSign)):
+                    detectedSign.append(1000)
+                    i+=1
             else:
                 imageDisplayer.number = random.randint(0, 25)    
                 #print("Number = " + str(imageDisplayer.number))
@@ -172,7 +171,9 @@ def main():
                 #cv.waitKey(0)
                 detected = False
                 detectedSign.clear
-                detectedSign.append(1000)
+                for i in range(len(detectedSign)):
+                    detectedSign.append(1000)
+                    i+=1
 
 
         '''newLandMarkList = []
@@ -186,8 +187,25 @@ def main():
         testBrect = calc_bounding_rect2(debug_image, newLandMarkList)'''
         
         if results.multi_hand_landmarks is not None:
-            print (len(results.multi_hand_landmarks))
+            if len(results.multi_hand_landmarks) == 2:
+                indexHand = 0
+                for hand in results.multi_handedness:
+                    handType = hand.classification[0].label
+                    if(indexHand == 0 and handType == "Left"):
+                       # print("Right was first")
+                        temp = results.multi_hand_landmarks[0]
+                        results.multi_hand_landmarks[0] = results.multi_hand_landmarks[1]
+                        results.multi_hand_landmarks[1] = temp
+                        temp2 = results.multi_handedness[0]
+                        results.multi_handedness[0] = results.multi_handedness[1]
+                        results.multi_handedness[0] = temp2
+                        temp3 = results.multi_hand_world_landmarks[0]
+                        results.multi_hand_world_landmarks[0] = results.multi_hand_world_landmarks[1]
+                        results.multi_hand_world_landmarks[1] = temp3
+                        break
+                    indexHand = indexHand+1
 
+                    
         #  ####################################################################
         if results.multi_hand_landmarks is not None:
             if len(results.multi_hand_landmarks) == 1:
@@ -285,12 +303,27 @@ def main():
                     #    break
                     #else:
                         #point_history.append([0, 0])
+                    
+
+
                     if(hand_sign_id >= 2):
                         detected_Hand_Sign = hand_sign_id + 1
-                        detectedSign.append(detected_Hand_Sign)
+                        #print("detected sign = " + str(detected_Hand_Sign))
+                        #print("expected sign = " + str(imageDisplayer.number))
+                        if(detected_Hand_Sign == imageDisplayer.number):
+                            print("Success")
+                            detectedSign.append(detected_Hand_Sign)
+                        else:
+                            detectedSign.append(1000)
+
                     else:
                         detected_Hand_Sign = hand_sign_id
-                        detectedSign.append(detected_Hand_Sign)
+                        if(detected_Hand_Sign == imageDisplayer.number):
+                            print("Success")
+                            detectedSign.append(detected_Hand_Sign)
+                        else:
+                            detectedSign.append(1000)
+
                     #print(hand_sign_id)
 
                     # Finger gesture classification

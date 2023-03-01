@@ -49,7 +49,7 @@ class fingerImageDisplayer(object):
 
     def checkIfCorrectSign(self, detected):
         rounded = self.getRounded(detected)
-        #print("Rounded = " + str(rounded))
+        print("Rounded = " + str(rounded))
         if rounded == self.number:
             return True
         else:

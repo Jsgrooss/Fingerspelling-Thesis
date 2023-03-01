@@ -1,7 +1,11 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\LetterPictures",
+    "\\model",
+    "\\model\\keypoint_classifier",
+    "\\model\\point_history_classifier"
   ],
-  "SelectedNode": "\\C:\\Users\\jonas\\OneDrive\\Dokumenter\\ITU\\Thesis\\VSCode",
+  "SelectedNode": "\\app.py",
   "PreviewInSolutionExplorer": false
 }
