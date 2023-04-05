@@ -10,6 +10,7 @@ pygame.init()
 # 1: create dector for full words
 # 2: Make it so the dector doesn't have to reinitialize every time
 # 3: Customer orders
+# 4: Place things in correct places
 
 #Create game window
 SCREEN_WIDTH = 1400
@@ -54,12 +55,26 @@ lvl1_img = pygame.image.load("images/button_level1.png").convert_alpha()
 lvl2_img = pygame.image.load("images/button_level2.png").convert_alpha()
 
 #Dialogue
+
+#Testing for single character detection
+
 sixth_dialogue = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 3, "Now this is the letter E", font, BLACK, "kitchen", "chef", "E", None)
 fifth_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 1, "Very good!", font, BLACK, "kitchen", "chef", sixth_dialogue)
 fourth_dialogue = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 3, "I am the chef, this is the ltter A", font, BLACK, "kitchen", "chef", "A", fifth_dialogue)
 third_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 1, "This is the chef", font, BLACK, "kitchen", "manager", fourth_dialogue)
 second_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 1, "Blah, blah, Ill show you to the chef", font, BLACK, "front", "manager", third_dialogue)
+
+#sixth_dialogue 
+#fifth_dialogue 
+#fourth_dialogue
+#third_dialogue 
+#second_dialogue
 first_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 1, "Hello and welcome to the restaurant", font, BLACK, "front",  "manager", second_dialogue)
+test_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 1, "TESTTESTTEST", font, BLACK, "front",  "manager", None)
+
+
+dialogue.insertDialogue(third_dialogue, fourth_dialogue, test_dialogue)
+
 
 #main menu
 play_button = button.Button(SCREEN_WIDTH/2 - play_img.get_width()/2, 125, play_img, 1)
@@ -121,6 +136,9 @@ while run:
     if scene_state == "kitchen":
         screen.fill((0,78,91))
         draw_text("In the kitchen", font, BLACK, SCREEN_WIDTH/2, SCREEN_HEIGHT/4 - SCREEN_HEIGHT/4)
+    if scene_state == "customer":
+        screen.fill((91,91,91))
+        draw_text("With customer", font, BLACK, SCREEN_WIDTH/2, SCREEN_HEIGHT/4 - SCREEN_HEIGHT/4)
 
     #check if game is pause
     if game_paused == True: 

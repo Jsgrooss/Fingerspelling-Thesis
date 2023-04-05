@@ -1,5 +1,6 @@
 import pygame
 import string
+from copy import deepcopy
 from enum import Enum
 
 #chr(ord('@') + 1) -> A
@@ -9,8 +10,32 @@ class DialogueNodeType(Enum):
     Multi = 2
     PlayerInput = 3
 
+class Dialogue():
+    def __init__ (self, x, y, nodeType, text, font, text_color, scene, character, next):
+        self.x = x
+        self.y = y
+        self.type = DialogueNodeType(nodeType)
+        self.text = text
+        self.font = font
+        self.text_color = text_color
+        self.scene = scene
+        self.character = character
+        self.next = next
+        self.img = font.render(text, True, text_color)
+    
+    def draw_text(self, surface, debug):
+        pass
 
-class LinearDialogueNode():
+    def progress_dialogue(self):
+        pass
+
+
+def insertDialogue(dialogue1:Dialogue, dialogue2:Dialogue, newDialogue:Dialogue):
+    newDia = newDialogue
+    dialogue1.next = newDia
+    newDia.next = dialogue2
+
+class LinearDialogueNode(Dialogue):
     def __init__ (self, x, y, nodeType, text, font, text_color, scene, character, next):
         self.x = x
         self.y = y
@@ -35,7 +60,7 @@ class LinearDialogueNode():
         return self.next
 
 
-class MultiDialogueNode():
+class MultiDialogueNode(Dialogue):
     def __init__ (self, x, y, nodeType, text, font, text_color, scene, character, choices, next_dialogues):
         self.x = x
         self.y = y
@@ -48,7 +73,6 @@ class MultiDialogueNode():
         self.choices = choices
         self.next_dialogues = next_dialogues
         self.img = font.render(text, True, text_color)
-
 
     def draw_text(self, surface, debug):
         if debug:
@@ -65,7 +89,8 @@ class MultiDialogueNode():
         if choice == 3:
             return self.next_dialogues[2]
         
-class PlayerInputDialogue():
+        
+class PlayerInputDialogue(Dialogue):
     def __init__ (self, x, y, nodeType, text, font, text_color, scene, character, letter, next):
         self.x = x
         self.y = y
