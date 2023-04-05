@@ -75,13 +75,14 @@ class PlayerInputDialogue():
         self.text_color = text_color
         self.scene = scene
         self.character = character
-        self.letter = string.ascii_uppercase.index(letter)
+        self.letter = letter
+        self.letterNumber = string.ascii_uppercase.index(letter)
         self.next = next
         self.img = font.render(text, True, text_color)
 
 
     def draw_text(self, surface, debug):
-        letterImg = pygame.image.load("LetterPictures/"+str(self.letter)+".png").convert_alpha()
+        letterImg = pygame.image.load("LetterPictures/"+str(self.letterNumber)+".png").convert_alpha()
         if debug:
             self.img = self.font.render(self.character + ": " + self.text, True, self.text_color)
             surface.blit(self.img, (self.x - self.img.get_width()/2, self.y))

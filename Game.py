@@ -2,6 +2,7 @@ import pygame
 import button
 import dialogue
 import string
+import gestureRecognizer
 
 pygame.init()
 
@@ -11,6 +12,8 @@ SCREEN_HEIGHT = 900
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Main Menu")
+
+recognizer = gestureRecognizer.GestureRecognizer("eng")
 
 #game variables
 game_paused = True 
@@ -154,20 +157,36 @@ while run:
             current_dialogue.draw_text(screen, True)
             scene_state = current_dialogue.scene
             if current_dialogue.type == dialogue.DialogueNodeType(3):
+                current_dialogue.draw_text(screen, True)
                 waiting_for_input = True
         if level_state == "lvl1":
             draw_text("Welcome to level 1", font, BLACK, 100, 250)
         if level_state == "lvl2":
             draw_text("Welcome to levesl 2", font, BLACK, 100, 250)
 
+
+    #Needs to be cleaned up
     if waiting_for_input == True:
-        input_rect_dest = ((SCREEN_WIDTH/2), SCREEN_HEIGHT/2 - 200)
+        if recognizer.detectLetter(screen, SCREEN_WIDTH, SCREEN_HEIGHT, current_dialogue.letter):
+            waiting_for_input = False
+            
+            if current_dialogue.progress_dialogue() is not None:
+                current_dialogue = current_dialogue.progress_dialogue()
+            else:
+                    print("final dialogue of this chapter, return to menu")
+                    level_state = ""
+                    scene_state = ""
+                    menu_state = "main"
+                    game_paused = True
+            
+        '''input_rect_dest = ((SCREEN_WIDTH/2), SCREEN_HEIGHT/2 - 200)
         input_rect = pygame.Rect(input_rect_dest[0], input_rect_dest[1] , 140,50)
         text_surface = font.render("Guess = " + str(user_text), True, (0,0,0))
         screen.blit(text_surface, (input_rect.x+5, input_rect.y+5))
-        input_rect.w = max(text_surface.get_width() + 10, 200)
+        input_rect.w = max(text_surface.get_width() + 10, 200)'''
 
 
+    #needs to be cleaned up
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
