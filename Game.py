@@ -6,6 +6,11 @@ import gestureRecognizer
 
 pygame.init()
 
+#TODO SECTION
+# 1: create dector for full words
+# 2: Make it so the dector doesn't have to reinitialize every time
+# 3: Customer orders
+
 #Create game window
 SCREEN_WIDTH = 1400
 SCREEN_HEIGHT = 900
@@ -75,13 +80,31 @@ introduction_button = button.Button(SCREEN_WIDTH/2 - introduction_img.get_width(
 lvl1_button = button.Button(SCREEN_WIDTH/2 - lvl1_img.get_width()/2, 250, lvl1_img, 1)
 lvl2_button = button.Button(SCREEN_WIDTH/2 - lvl2_img.get_width()/2, 350, lvl2_img, 1)
 
+#Helper functions
 def draw_text(text, font, text_col, x, y):
     img = font.render(text, True, text_col)
     screen.blit(img, (x-img.get_width()/2,y))
 
+def checkDialogue():
+    global current_dialogue
+    global level_state
+    global scene_state
+    global menu_state
+    global game_paused
+    global waiting_for_input
+    if current_dialogue.progress_dialogue() is not None:
+        current_dialogue = current_dialogue.progress_dialogue()
+    else:
+        print("final dialogue of this chapter, return to menu")
+        level_state = ""
+        scene_state = ""
+        menu_state = "main"
+        game_paused = True
+        waiting_for_input = False
+        current_dialogue = None
+
 #clean when created
 user_text = ""
-
 
 #game loop
 run = True
@@ -164,28 +187,13 @@ while run:
         if level_state == "lvl2":
             draw_text("Welcome to levesl 2", font, BLACK, 100, 250)
 
-
-    #Needs to be cleaned up
+    #TODO create a detection for full words
     if waiting_for_input == True:
         if recognizer.detectLetter(screen, SCREEN_WIDTH, SCREEN_HEIGHT, current_dialogue.letter):
-            waiting_for_input = False
-            
-            if current_dialogue.progress_dialogue() is not None:
-                current_dialogue = current_dialogue.progress_dialogue()
-            else:
-                    print("final dialogue of this chapter, return to menu")
-                    level_state = ""
-                    scene_state = ""
-                    menu_state = "main"
-                    game_paused = True
-            
-        '''input_rect_dest = ((SCREEN_WIDTH/2), SCREEN_HEIGHT/2 - 200)
-        input_rect = pygame.Rect(input_rect_dest[0], input_rect_dest[1] , 140,50)
-        text_surface = font.render("Guess = " + str(user_text), True, (0,0,0))
-        screen.blit(text_surface, (input_rect.x+5, input_rect.y+5))
-        input_rect.w = max(text_surface.get_width() + 10, 200)'''
+            waiting_for_input = False        
+            checkDialogue()
 
-
+    #TODO
     #needs to be cleaned up
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
@@ -194,15 +202,9 @@ while run:
                 menu_state = "pause"
             if event.key == pygame.K_SPACE and progressed_dialogue == False and waiting_for_input == False:
                 progressed_dialogue = True
-                if current_dialogue.progress_dialogue() is not None:
-                    current_dialogue = current_dialogue.progress_dialogue()
-                    print("progressed")
-                else:
-                    print("final dialogue of this chapter, return to menu")
-                    level_state = ""
-                    scene_state = ""
-                    menu_state = "main"
-                    game_paused = True
+                print(current_dialogue)
+                checkDialogue()
+
             #Handle player keyboard input
             if(event.key == pygame.K_BACKSPACE and waiting_for_input == True):
                 user_text = user_text[0:-1]
@@ -211,15 +213,7 @@ while run:
                 if(guess == current_dialogue.letter):
                     user_text = ""
                     waiting_for_input = False
-                    if current_dialogue.progress_dialogue() is not None:
-                        current_dialogue = current_dialogue.progress_dialogue()
-                        print("progressed")
-                    else:
-                        print("final dialogue of this chapter, return to menu")
-                        level_state = ""
-                        scene_state = ""
-                        menu_state = "main"
-                        game_paused = True
+                    checkDialogue()
             else:
                 user_text = event.unicode
 
