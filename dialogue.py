@@ -91,7 +91,7 @@ class MultiDialogueNode(Dialogue):
         
         
 class PlayerInputDialogue(Dialogue):
-    def __init__ (self, x, y, nodeType, text, font, text_color, scene, character, letter, next):
+    def __init__ (self, x, y, nodeType, text, font, text_color, scene, character, letters, next):
         self.x = x
         self.y = y
         self.type = DialogueNodeType(nodeType)
@@ -100,21 +100,33 @@ class PlayerInputDialogue(Dialogue):
         self.text_color = text_color
         self.scene = scene
         self.character = character
-        self.letter = letter
-        self.letterNumber = string.ascii_uppercase.index(letter)
+        self.letters = letters
         self.next = next
         self.img = font.render(text, True, text_color)
 
 
     def draw_text(self, surface, debug):
-        letterImg = pygame.image.load("LetterPictures/"+str(self.letterNumber)+".png").convert_alpha()
-        if debug:
+        if (len(self.letters) == 1):
+            letterNumber = string.ascii_uppercase.index(self.letters)
+            letterImg = pygame.image.load("LetterPictures/"+str(letterNumber)+".png").convert_alpha()
+            if debug:
+                self.img = self.font.render(self.character + ": " + self.text, True, self.text_color)
+                surface.blit(self.img, (self.x - self.img.get_width()/2, self.y))
+                surface.blit(letterImg,((self.x - self.img.get_width()/2, self.y-100)))
+            else:
+                surface.blit(self.img, (self.x - self.img.get_width()/2, self.y))
+                surface.blit(letterImg,((self.x - self.img.get_width()/2, self.y-100)))    
+        else:
+            count = 0
+            for l in self.letters:
+                print(l)
+                lNumber = string.ascii_uppercase.index(l)
+                letterImg = pygame.image.load("LetterPictures/"+str(lNumber)+".png").convert_alpha()
+                surface.blit(letterImg,((self.x - self.img.get_width()/2 + letterImg.get_width() * count, self.y-100)))
+                count += 1
+            
             self.img = self.font.render(self.character + ": " + self.text, True, self.text_color)
             surface.blit(self.img, (self.x - self.img.get_width()/2, self.y))
-            surface.blit(letterImg,((self.x - self.img.get_width()/2, self.y-100)))
-        else:
-            surface.blit(self.img, (self.x - self.img.get_width()/2, self.y))
-            surface.blit(letterImg,((self.x - self.img.get_width()/2, self.y-100)))    
 
     def progress_dialogue(self):
         return self.next

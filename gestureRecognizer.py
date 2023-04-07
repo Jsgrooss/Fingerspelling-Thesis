@@ -284,7 +284,7 @@ class GestureRecognizer():
                             #print("detected sign = " + str(detected_Hand_Sign))
                             #print("expected sign = " + str(imageDisplayer.number))
                             if(detected_Hand_Sign == imageDisplayer.number):
-                                print("Success")
+                                #print("Success")
                                 detectedSign.append(detected_Hand_Sign)
                             else:
                                 detectedSign.append(1000)
@@ -292,7 +292,7 @@ class GestureRecognizer():
                         else:
                             detected_Hand_Sign = hand_sign_id
                             if(detected_Hand_Sign == imageDisplayer.number):
-                                print("Success")
+                                #print("Success")
                                 detectedSign.append(detected_Hand_Sign)
                             else:
                                 detectedSign.append(1000)
@@ -351,7 +351,325 @@ class GestureRecognizer():
                 detected = True
                 detecting = False
 
-            surface.blit(py_debug_image_rezied, ((w/2, h/2-100)))
+            surface.blit(py_debug_image_rezied, ((w/2, h/2+100)))
+            pygame.display.update()
+
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    quit()
+
+        cap.release()
+        cv.destroyAllWindows()
+        return True
+
+    def detectWord(self, surface, w, h, target):
+    # Argument parsing #################################################################
+        args = self.get_args()
+
+        cap_device = args.device
+        cap_width = args.width
+        cap_height = args.height
+
+        use_static_image_mode = args.use_static_image_mode
+        min_detection_confidence = args.min_detection_confidence
+        min_tracking_confidence = args.min_tracking_confidence
+
+        use_brect = True
+
+        # Camera preparation ###############################################################
+        cap = cv.VideoCapture(cap_device)
+        cap.set(cv.CAP_PROP_FRAME_WIDTH, cap_width)
+        cap.set(cv.CAP_PROP_FRAME_HEIGHT, cap_height)
+
+        # Model load #############################################################
+        mp_hands = mp.solutions.hands
+        hands = mp_hands.Hands(
+            static_image_mode=use_static_image_mode,
+            max_num_hands=2,
+            min_detection_confidence=min_detection_confidence,
+            min_tracking_confidence=min_tracking_confidence,
+        )
+
+        keypoint_classifier = KeyPointClassifier(model_path='model/keypoint_classifier/keypoint_classifier.tflite')
+        keypoint_classifier_single = KeyPointClassifier(model_path='model/keypoint_classifier/keypoint_classifier_SingleHand.tflite')
+
+        point_history_classifier = PointHistoryClassifier()
+
+        # Read labels ###########################################################
+        with open('model/keypoint_classifier/keypoint_classifier_label.csv',
+                encoding='utf-8-sig') as f:
+            keypoint_classifier_labels = csv.reader(f)
+            keypoint_classifier_labels = [
+                row[0] for row in keypoint_classifier_labels
+            ]
+        with open('model/keypoint_classifier/keypoint_classifier_label_singleHand.csv',
+                encoding='utf-8-sig') as f:
+            keypoint_classifier_labels_singleHand = csv.reader(f)
+            keypoint_classifier_labels_singleHand = [
+                row[0] for row in keypoint_classifier_labels_singleHand
+            ]
+        with open(
+                'model/point_history_classifier/point_history_classifier_label.csv',
+                encoding='utf-8-sig') as f:
+            point_history_classifier_labels = csv.reader(f)
+            point_history_classifier_labels = [
+                row[0] for row in point_history_classifier_labels
+            ]
+
+        # FPS Measurement ########################################################
+        cvFpsCalc = CvFpsCalc(buffer_len=10)
+
+        # Coordinate history #################################################################
+        history_length = 16
+        point_history = deque(maxlen=history_length)
+
+        # Finger gesture history ################################################
+        finger_gesture_history = deque(maxlen=history_length)
+        finger_gesture_historySingle = deque(maxlen=history_length)
+
+        #  ########################################################################
+        # 'game settings'
+        detectedSign = deque(maxlen=20)
+
+        imageDisplayer = fingerImageDisplayer("Eng", string.ascii_uppercase.index(target[0]))
+
+        #
+        mode = 0
+        index = 10000
+        detected = True    
+        detecting = True
+
+        msg = target
+
+        while detecting:
+            fps = cvFpsCalc.get()
+
+            # Process Key (ESC: end) #################################################
+            key = cv.waitKey(10)
+            if key == 27:  # ESC
+                break
+            if key == 8:
+                imageDisplayer.skipCurrent()
+            number, mode = self.select_mode(key, mode)
+
+            # Camera capture #####################################################
+            ret, image = cap.read()
+            if not ret:
+                break
+            image = cv.flip(image, 1)  # Mirror display
+            debug_image = copy.deepcopy(image)
+
+            # Detection implementation #############################################################
+            image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
+            image.flags.writeable = False
+            results = hands.process(image)
+            image.flags.writeable = True
+
+            if (index > len(msg)):
+                index = 0
+
+            if (detected == True):
+                detected = False
+                detectedSign.clear
+                for i in range(10):
+                    detectedSign.append(1000)
+                    i+=1
+
+            if results.multi_hand_landmarks is not None:
+                if len(results.multi_hand_landmarks) == 2:
+                    indexHand = 0
+                    for hand in results.multi_handedness:
+                        handType = hand.classification[0].label
+                        if(indexHand == 0 and handType == "Left"):
+                        # print("Right was first")
+                            temp = results.multi_hand_landmarks[0]
+                            results.multi_hand_landmarks[0] = results.multi_hand_landmarks[1]
+                            results.multi_hand_landmarks[1] = temp
+                            temp2 = results.multi_handedness[0]
+                            results.multi_handedness[0] = results.multi_handedness[1]
+                            results.multi_handedness[0] = temp2
+                            temp3 = results.multi_hand_world_landmarks[0]
+                            results.multi_hand_world_landmarks[0] = results.multi_hand_world_landmarks[1]
+                            results.multi_hand_world_landmarks[1] = temp3
+                            break
+                        indexHand = indexHand+1
+
+                        
+            #  ####################################################################
+            if results.multi_hand_landmarks is not None:
+                if len(results.multi_hand_landmarks) == 1:
+                    for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
+
+                        # Bounding box calculation
+                        brect = self.calc_bounding_rect(debug_image, hand_landmarks)
+
+                        # Landmark calculation
+                        landmark_list = self.calc_landmark_list(debug_image, hand_landmarks)
+
+                        # Conversion to relative coordinates / normalized coordinates
+                        pre_processed_landmark_list = self.pre_process_landmark(landmark_list)
+                        pre_processed_point_history_list_Single = self.pre_process_point_history(debug_image, point_history)
+
+                        # Write to the dataset file
+                        self.logging_csv(number, mode, pre_processed_landmark_list,
+                                    pre_processed_point_history_list_Single)
+
+                        # Hand sign classification
+                        hand_sign_id = keypoint_classifier_single(pre_processed_landmark_list)
+                        if hand_sign_id == 'Ignore this for now':  # Point gesture
+                            #point_history.append(landmark_list[8])
+                            break
+                        else:
+                            point_history.append([0, 0])
+
+                        if(hand_sign_id == 0):
+                            detected_Hand_Sign = hand_sign_id +2
+                            detectedSign.append(detected_Hand_Sign)
+                        else:
+                            detected_Hand_Sign = hand_sign_id + 50
+                            detectedSign.append(detected_Hand_Sign)
+
+                        # Finger gesture classification
+                        finger_gesture_id = 0
+                        point_history_len = len(pre_processed_point_history_list_Single)
+                        if point_history_len == (history_length * 2):
+                            finger_gesture_id = point_history_classifier(
+                                pre_processed_point_history_list_Single)
+
+                        # Calculates the gesture IDs in the latest detection
+                        finger_gesture_historySingle.append(finger_gesture_id)
+                        most_common_fg_idSingle = Counter(finger_gesture_historySingle).most_common()
+
+                        # Drawing part
+                        debug_image = self.draw_bounding_rect(use_brect, debug_image, brect)
+                        debug_image = self.draw_landmarks(debug_image, landmark_list)
+                        debug_image = self.draw_info_text(
+                            debug_image,
+                            brect,
+                            handedness,
+                            keypoint_classifier_labels_singleHand[hand_sign_id],
+                            point_history_classifier_labels[most_common_fg_idSingle[0][0]],)
+                elif len(results.multi_hand_landmarks) == 2:
+                    for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
+                        
+                        '''
+                        print("Hand landmarks")
+                        print(hand_landmarks)
+                        print("Handedness")
+                        print(handedness)
+                        print("multi_handedness")
+                        print(results.multi_handedness)'''
+
+                        newLandMarkList = []
+                        for handsMarks in results.multi_hand_landmarks:
+                            for _, landmark in enumerate(handsMarks.landmark):
+                                newLandMarkList.append(landmark)
+
+                        # Bounding box calculation
+                        testBrect = self.calc_bounding_rect2(debug_image, newLandMarkList)
+                        #brect = calc_bounding_rect(debug_image, hand_landmarks)
+
+                        # Landmark calculation
+                        landmark_list = self.calc_landmark_list(debug_image, hand_landmarks)
+                        testLandmark_list = self.calc_landmark_list2(debug_image, newLandMarkList)
+
+                        # Conversion to relative coordinates / normalized coordinates
+                        #pre_processed_landmark_listOld = pre_process_landmark(landmark_list)
+                        pre_processed_landmark_listNew = []
+                        pre_processed_landmark_listNew = self.pre_process_landmark2(testLandmark_list)
+                        pre_processed_point_history_list = self.pre_process_point_history(debug_image, point_history)
+                        
+                        # Write to the dataset file
+                        self.logging_csv(number, mode, pre_processed_landmark_listNew,
+                                    pre_processed_point_history_list)
+
+                        # Hand sign classification
+                        hand_sign_id = keypoint_classifier(pre_processed_landmark_listNew)
+                        #if hand_sign_id == 'Ignore this for now':  # Point gesture
+                            #point_history.append(landmark_list[8])
+                        #    break
+                        #else:
+                            #point_history.append([0, 0])
+                    
+                        if(hand_sign_id >= 2):
+                            detected_Hand_Sign = hand_sign_id + 1
+                            #print("detected sign = " + str(detected_Hand_Sign))
+                            #print("expected sign = " + str(imageDisplayer.number))
+                            if(detected_Hand_Sign == imageDisplayer.number):
+                                #print("Success")
+                                detectedSign.append(detected_Hand_Sign)
+                            else:
+                                detectedSign.append(1000)
+
+                        else:
+                            detected_Hand_Sign = hand_sign_id
+                            if(detected_Hand_Sign == imageDisplayer.number):
+                                #print("Success")
+                                detectedSign.append(detected_Hand_Sign)
+                            else:
+                                detectedSign.append(1000)
+
+                        #print(hand_sign_id)
+
+                        # Finger gesture classification
+                        finger_gesture_id = 0
+                        point_history_len = len(pre_processed_point_history_list)
+                        if point_history_len == (history_length * 2):
+                            finger_gesture_id = point_history_classifier(
+                                pre_processed_point_history_list)
+
+                        # Calculates the gesture IDs in the latest detection
+                        finger_gesture_history.append(finger_gesture_id)
+                        most_common_fg_id = Counter(finger_gesture_history).most_common()
+
+                        # Drawing part
+                        #debug_image = draw_bounding_rect(use_brect, debug_image, brect)
+                        debug_image = self.draw_bounding_rect(use_brect, debug_image, testBrect)
+                        debug_image = self.draw_landmarks(debug_image, landmark_list)
+                        #debug_image = draw_landmarks(debug_image, newLandMarkList)
+                        '''debug_image = draw_info_text(
+                            debug_image,
+                            brect,
+                            handedness,
+                            keypoint_classifier_labels[hand_sign_id],
+                            point_history_classifier_labels[most_common_fg_id[0][0]],
+                        )'''
+                        debug_image = self.draw_info_text(
+                            debug_image,
+                            testBrect,
+                            handedness,
+                            keypoint_classifier_labels[hand_sign_id],
+                            point_history_classifier_labels[most_common_fg_id[0][0]],
+                        )   
+                        newLandMarkList.clear()
+                        
+            else:
+                point_history.append([0, 0])
+                detectedSign.append(1000)
+
+            #print(len(point_history))
+            debug_image = self.draw_point_history(debug_image, point_history)
+            debug_image = self.draw_info(debug_image, fps, mode, number)
+
+            py_debug_image = self.cvimage_to_pygame(debug_image)
+            py_debug_image_rezied = self.resizeImage(py_debug_image, 1.5)
+
+
+            # Screen reflection #############################################################
+            #cv.imshow('Hand Gesture Recognition', debug_image)
+            
+            if(self.checkIfCorrectSign(detectedSign, string.ascii_uppercase.index(msg[index])) == True):
+                print("correct letter found")
+                detected = True
+                index = index + 1
+
+                if (index >= len(msg)):
+                    detecting = False
+                else:
+                    imageDisplayer.number = string.ascii_uppercase.index(msg[index])
+
+            surface.blit(py_debug_image_rezied, ((w/2, h/2+100)))
             pygame.display.update()
 
             
