@@ -61,12 +61,12 @@ lvl2_img = pygame.image.load("images/button_level2.png").convert_alpha()
 #Testing for single character detection
 
 sixth_dialogue = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 3, "Now this is the letter E", font, BLACK, "kitchen", "chef", "E", None)
+test_word_input = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 3, "This is how you spell tea", font, BLACK, "kitchen", "chef", "TEA", sixth_dialogue)
 fifth_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 1, "Very good!", font, BLACK, "kitchen", "chef", sixth_dialogue)
-fourth_dialogue = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 3, "I am the chef, this is the ltter A", font, BLACK, "kitchen", "chef", "A", fifth_dialogue)
+fourth_dialogue = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 3, "I am the chef, this is the ltter A", font, BLACK, "kitchen", "chef", "A", test_word_input)
 third_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 1, "This is the chef", font, BLACK, "kitchen", "manager", fourth_dialogue)
 second_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 1, "Blah, blah, Ill show you to the chef", font, BLACK, "front", "manager", third_dialogue)
 first_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 1, "Hello and welcome to the restaurant", font, BLACK, "front",  "manager", second_dialogue)
-#test_word_input = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 3, "This is how you spell tea", font, BLACK, "kitchen", "chef", "TEA", fifth_dialogue)
 #test_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 1, "TESTTESTTEST", font, BLACK, "front",  "manager", None)
 
 
@@ -104,6 +104,8 @@ def checkDialogue():
     global waiting_for_input
     if current_dialogue.progress_dialogue() is not None:
         current_dialogue = current_dialogue.progress_dialogue()
+        print("new dialogue is")
+        print(current_dialogue.text)
     else:
         print("final dialogue of this chapter, return to menu")
         level_state = ""
@@ -119,7 +121,13 @@ user_text = ""
 #game loop
 run = True
 
+detector_initialized = False
+
 while run:
+
+    if detector_initialized == False:
+        recognizer.initialize()
+        detector_initialized = True
 
     #fill according to scene
     if scene_state == "":
@@ -231,7 +239,7 @@ while run:
                 if(guess == current_dialogue.letter):
                     user_text = ""
                     waiting_for_input = False
-                    checkDialogue()
+                    #checkDialogue()
             else:
                 user_text = event.unicode
 
@@ -241,8 +249,13 @@ while run:
             clicked = False
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE and progressed_dialogue == True:
-                progressed_dialogue = False
-                print("ready to progress")
+                pass
+                #progressed_dialogue = False
+                #print("ready to progress")
+        
+        if progressed_dialogue == True:
+            progressed_dialogue = False
+            print("ready to progress")
 
     pygame.display.update()
 

@@ -47,32 +47,83 @@ class GestureRecognizer():
         return pygame.image.frombuffer(image.tostring(), image.shape[1::-1],
                                     "BGR")  
     
+
+    def initialize(self):
+        args = self.get_args()
+        self.cap_device = args.device
+        self.cap_width = args.width
+        self.cap_height = args.height
+        self.use_static_image_mode = args.use_static_image_mode
+        self.min_detection_confidence = args.min_detection_confidence
+        self.min_tracking_confidence = args.min_tracking_confidence
+
+        self.mp_hands = mp.solutions.hands
+        self.hands = self.mp_hands.Hands(
+            static_image_mode=self.use_static_image_mode,
+            max_num_hands=2,
+            min_detection_confidence=self.min_detection_confidence,
+            min_tracking_confidence=self.min_tracking_confidence,
+        )
+
+        self.keypoint_classifier = KeyPointClassifier(model_path='model/keypoint_classifier/keypoint_classifier.tflite')
+        self.keypoint_classifier_single = KeyPointClassifier(model_path='model/keypoint_classifier/keypoint_classifier_SingleHand.tflite')
+
+        self.point_history_classifier = PointHistoryClassifier()
+
+        with open('model/keypoint_classifier/keypoint_classifier_label.csv',
+                encoding='utf-8-sig') as f:
+            self.keypoint_classifier_labels = csv.reader(f)
+            self.keypoint_classifier_labels = [
+                row[0] for row in self.keypoint_classifier_labels
+            ]
+        with open('model/keypoint_classifier/keypoint_classifier_label_singleHand.csv',
+                encoding='utf-8-sig') as f:
+            self.keypoint_classifier_labels_singleHand = csv.reader(f)
+            self.keypoint_classifier_labels_singleHand = [
+                row[0] for row in self.keypoint_classifier_labels_singleHand
+            ]
+        with open(
+                'model/point_history_classifier/point_history_classifier_label.csv',
+                encoding='utf-8-sig') as f:
+            self.point_history_classifier_labels = csv.reader(f)
+            self.point_history_classifier_labels = [
+                row[0] for row in self.point_history_classifier_labels
+            ]
+        
+        #self.cap = cv.VideoCapture(self.cap_device)
+        #self.cap.set(cv.CAP_PROP_FRAME_WIDTH, self.cap_width)
+        #self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, self.cap_height)
+
+
+
+
+    
     def detectLetter(self, surface, w, h, target):
     # Argument parsing #################################################################
         args = self.get_args()
-
+        '''
         cap_device = args.device
         cap_width = args.width
         cap_height = args.height
 
         use_static_image_mode = args.use_static_image_mode
         min_detection_confidence = args.min_detection_confidence
-        min_tracking_confidence = args.min_tracking_confidence
+        min_tracking_confidence = args.min_tracking_confidence'''
 
         use_brect = True
 
         # Camera preparation ###############################################################
-        cap = cv.VideoCapture(cap_device)
-        cap.set(cv.CAP_PROP_FRAME_WIDTH, cap_width)
-        cap.set(cv.CAP_PROP_FRAME_HEIGHT, cap_height)
+        cap = cv.VideoCapture(self.cap_device)
+        cap.set(cv.CAP_PROP_FRAME_WIDTH, self.cap_width)
+        cap.set(cv.CAP_PROP_FRAME_HEIGHT, self.cap_height)
 
         # Model load #############################################################
-        mp_hands = mp.solutions.hands
+        '''mp_hands = mp.solutions.hands
         hands = mp_hands.Hands(
-            static_image_mode=use_static_image_mode,
+            static_image_mode=self.use_static_image_mode,
             max_num_hands=2,
-            min_detection_confidence=min_detection_confidence,
-            min_tracking_confidence=min_tracking_confidence,
+            min_detection_confidence=self.min_detection_confidence,
+            min_tracking_confidence=self.min_tracking_confidence,
         )
 
         keypoint_classifier = KeyPointClassifier(model_path='model/keypoint_classifier/keypoint_classifier.tflite')
@@ -100,7 +151,7 @@ class GestureRecognizer():
             point_history_classifier_labels = [
                 row[0] for row in point_history_classifier_labels
             ]
-
+'''
         # FPS Measurement ########################################################
         cvFpsCalc = CvFpsCalc(buffer_len=10)
 
@@ -149,7 +200,7 @@ class GestureRecognizer():
             # Detection implementation #############################################################
             image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
             image.flags.writeable = False
-            results = hands.process(image)
+            results = self.hands.process(image)
             image.flags.writeable = True
 
             if (detected == True):
@@ -200,7 +251,7 @@ class GestureRecognizer():
                                     pre_processed_point_history_list_Single)
 
                         # Hand sign classification
-                        hand_sign_id = keypoint_classifier_single(pre_processed_landmark_list)
+                        hand_sign_id = self.keypoint_classifier_single(pre_processed_landmark_list)
                         if hand_sign_id == 'Ignore this for now':  # Point gesture
                             #point_history.append(landmark_list[8])
                             break
@@ -219,7 +270,7 @@ class GestureRecognizer():
                         finger_gesture_id = 0
                         point_history_len = len(pre_processed_point_history_list_Single)
                         if point_history_len == (history_length * 2):
-                            finger_gesture_id = point_history_classifier(
+                            finger_gesture_id = self.point_history_classifier(
                                 pre_processed_point_history_list_Single)
 
                         # Calculates the gesture IDs in the latest detection
@@ -233,8 +284,8 @@ class GestureRecognizer():
                             debug_image,
                             brect,
                             handedness,
-                            keypoint_classifier_labels_singleHand[hand_sign_id],
-                            point_history_classifier_labels[most_common_fg_idSingle[0][0]],)
+                            self.keypoint_classifier_labels_singleHand[hand_sign_id],
+                            self.point_history_classifier_labels[most_common_fg_idSingle[0][0]],)
                 elif len(results.multi_hand_landmarks) == 2:
                     for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
                         
@@ -270,7 +321,7 @@ class GestureRecognizer():
                                     pre_processed_point_history_list)
 
                         # Hand sign classification
-                        hand_sign_id = keypoint_classifier(pre_processed_landmark_listNew)
+                        hand_sign_id = self.keypoint_classifier(pre_processed_landmark_listNew)
                         #if hand_sign_id == 'Ignore this for now':  # Point gesture
                             #point_history.append(landmark_list[8])
                         #    break
@@ -303,7 +354,7 @@ class GestureRecognizer():
                         finger_gesture_id = 0
                         point_history_len = len(pre_processed_point_history_list)
                         if point_history_len == (history_length * 2):
-                            finger_gesture_id = point_history_classifier(
+                            finger_gesture_id = self.point_history_classifier(
                                 pre_processed_point_history_list)
 
                         # Calculates the gesture IDs in the latest detection
@@ -326,8 +377,8 @@ class GestureRecognizer():
                             debug_image,
                             testBrect,
                             handedness,
-                            keypoint_classifier_labels[hand_sign_id],
-                            point_history_classifier_labels[most_common_fg_id[0][0]],
+                            self.keypoint_classifier_labels[hand_sign_id],
+                            self.point_history_classifier_labels[most_common_fg_id[0][0]],
                         )   
                         newLandMarkList.clear()
                         
@@ -365,7 +416,7 @@ class GestureRecognizer():
 
     def detectWord(self, surface, w, h, target):
     # Argument parsing #################################################################
-        args = self.get_args()
+        '''args = self.get_args()
 
         cap_device = args.device
         cap_width = args.width
@@ -374,16 +425,16 @@ class GestureRecognizer():
         use_static_image_mode = args.use_static_image_mode
         min_detection_confidence = args.min_detection_confidence
         min_tracking_confidence = args.min_tracking_confidence
-
+'''
         use_brect = True
 
         # Camera preparation ###############################################################
-        cap = cv.VideoCapture(cap_device)
-        cap.set(cv.CAP_PROP_FRAME_WIDTH, cap_width)
-        cap.set(cv.CAP_PROP_FRAME_HEIGHT, cap_height)
+        cap = cv.VideoCapture(self.cap_device)
+        cap.set(cv.CAP_PROP_FRAME_WIDTH, self.cap_width)
+        cap.set(cv.CAP_PROP_FRAME_HEIGHT, self.cap_height)
 
         # Model load #############################################################
-        mp_hands = mp.solutions.hands
+        '''mp_hands = mp.solutions.hands
         hands = mp_hands.Hands(
             static_image_mode=use_static_image_mode,
             max_num_hands=2,
@@ -415,7 +466,7 @@ class GestureRecognizer():
             point_history_classifier_labels = csv.reader(f)
             point_history_classifier_labels = [
                 row[0] for row in point_history_classifier_labels
-            ]
+            ]'''
 
         # FPS Measurement ########################################################
         cvFpsCalc = CvFpsCalc(buffer_len=10)
@@ -463,7 +514,7 @@ class GestureRecognizer():
             # Detection implementation #############################################################
             image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
             image.flags.writeable = False
-            results = hands.process(image)
+            results = self.hands.process(image)
             image.flags.writeable = True
 
             if (index > len(msg)):
@@ -516,7 +567,7 @@ class GestureRecognizer():
                                     pre_processed_point_history_list_Single)
 
                         # Hand sign classification
-                        hand_sign_id = keypoint_classifier_single(pre_processed_landmark_list)
+                        hand_sign_id = self.keypoint_classifier_single(pre_processed_landmark_list)
                         if hand_sign_id == 'Ignore this for now':  # Point gesture
                             #point_history.append(landmark_list[8])
                             break
@@ -534,7 +585,7 @@ class GestureRecognizer():
                         finger_gesture_id = 0
                         point_history_len = len(pre_processed_point_history_list_Single)
                         if point_history_len == (history_length * 2):
-                            finger_gesture_id = point_history_classifier(
+                            finger_gesture_id = self.point_history_classifier(
                                 pre_processed_point_history_list_Single)
 
                         # Calculates the gesture IDs in the latest detection
@@ -548,8 +599,8 @@ class GestureRecognizer():
                             debug_image,
                             brect,
                             handedness,
-                            keypoint_classifier_labels_singleHand[hand_sign_id],
-                            point_history_classifier_labels[most_common_fg_idSingle[0][0]],)
+                            self.keypoint_classifier_labels_singleHand[hand_sign_id],
+                            self.point_history_classifier_labels[most_common_fg_idSingle[0][0]],)
                 elif len(results.multi_hand_landmarks) == 2:
                     for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
                         
@@ -585,7 +636,7 @@ class GestureRecognizer():
                                     pre_processed_point_history_list)
 
                         # Hand sign classification
-                        hand_sign_id = keypoint_classifier(pre_processed_landmark_listNew)
+                        hand_sign_id = self.keypoint_classifier(pre_processed_landmark_listNew)
                         #if hand_sign_id == 'Ignore this for now':  # Point gesture
                             #point_history.append(landmark_list[8])
                         #    break
@@ -616,7 +667,7 @@ class GestureRecognizer():
                         finger_gesture_id = 0
                         point_history_len = len(pre_processed_point_history_list)
                         if point_history_len == (history_length * 2):
-                            finger_gesture_id = point_history_classifier(
+                            finger_gesture_id = self.point_history_classifier(
                                 pre_processed_point_history_list)
 
                         # Calculates the gesture IDs in the latest detection
@@ -639,8 +690,8 @@ class GestureRecognizer():
                             debug_image,
                             testBrect,
                             handedness,
-                            keypoint_classifier_labels[hand_sign_id],
-                            point_history_classifier_labels[most_common_fg_id[0][0]],
+                            self.keypoint_classifier_labels[hand_sign_id],
+                            self.point_history_classifier_labels[most_common_fg_id[0][0]],
                         )   
                         newLandMarkList.clear()
                         
@@ -699,7 +750,6 @@ class GestureRecognizer():
         #print(rounded)
         return rounded
     
-
     def select_mode(self, key, mode):
         number = -1
         if 48 <= key <= 57:  # 0 ~ 9
