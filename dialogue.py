@@ -82,14 +82,29 @@ class LinearDialogueNode(Dialogue):
         self.character = character
         self.next = next
         self.img = font.render(text, True, text_color)
+        self.lines = wrapline(self.text, self.font, x)
 
 
-    def draw_text(self, surface, debug):
+    '''def draw_text(self, surface, debug):
         if debug:
             self.img = self.font.render(self.character + ": " + self.text, True, self.text_color)
             surface.blit(self.img, (self.x - self.img.get_width()/2, self.y))
         else:
-            surface.blit(self.img, (self.x - self.img.get_width()/2, self.y))    
+            surface.blit(self.img, (self.x - self.img.get_width()/2, self.y))   '''
+
+    def draw_text(self, surface, debug):
+        #print(lines)
+        lineCount = 0
+        for line in self.lines:
+            img = self.font.render(line, True, self.text_color)
+            if debug:
+                if (lineCount == 0):
+                    img = self.font.render(self.character + ": " + line, True, self.text_color)
+                surface.blit(img, (self.x - img.get_width()/2, self.y + img.get_height() * lineCount))
+            else:
+                surface.blit(img, (self.x - img.get_width()/2, self.y + img.get_height() * lineCount))
+
+            lineCount +=1
 
     def progress_dialogue(self):
         return self.next
