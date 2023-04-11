@@ -82,7 +82,7 @@ class LinearDialogueNode(Dialogue):
         self.character = character
         self.next = next
         self.img = font.render(text, True, text_color)
-        self.lines = wrapline(self.text, self.font, x)
+        self.lines = wrapline(self.text, self.font, (x*2)*0.8)
 
 
     '''def draw_text(self, surface, debug):
@@ -150,7 +150,7 @@ class PlayerInputDialogue(Dialogue):
         self.text_color = text_color
         self.scene = scene
         self.character = character
-        self.letters = letters
+        self.letters = letters.upper()
         self.showLetter =  showLetter
         self.next = next
         self.img = font.render(text, True, text_color)

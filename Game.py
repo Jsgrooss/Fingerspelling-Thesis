@@ -1,6 +1,7 @@
 import pygame
 import button
 import dialogue
+import random
 import string
 import gestureRecognizer
 import game_customer
@@ -15,7 +16,8 @@ pygame.init()
 # 4: Place things in correct places
 # 5: replace imagedisplayer number in gesture recognizer with local variable
 # 6: Allow game to be paused during detection
-# 7: Give feedback on accepted letter
+# 7: Give feedback on accepted letter and wrong letters
+# 8: Initialize random dishes when clicking level button, instead of when dialogue is created
 
 #Create game window
 SCREEN_WIDTH = 1400
@@ -56,6 +58,11 @@ KITCHEN = "kitchen"
 FRONT = "front"
 CUSTOMER = "customer"
 
+#characters
+CHEF = "Chef"
+MANAGER = "Manager"
+CUSTOMER_CHAR = "Customer"
+
 #load button images
 play_img = pygame.image.load("images/button_play.png").convert_alpha()
 resume_img = pygame.image.load("images/button_resume.png").convert_alpha()
@@ -68,6 +75,7 @@ back_img = pygame.image.load("images/button_back.png").convert_alpha()
 introduction_img = pygame.image.load("images/button_introduction.png").convert_alpha()
 lvl1_img = pygame.image.load("images/button_level1.png").convert_alpha()
 lvl2_img = pygame.image.load("images/button_level2.png").convert_alpha()
+getOrder_img = pygame.image.load("images/GetOrder.png").convert_alpha()
 
 test1_img = pygame.image.load("images/test1.png").convert_alpha()
 test2_img = pygame.image.load("images/test2.png").convert_alpha()
@@ -78,57 +86,85 @@ SHOW_LETTER = True
 
 
 #Testing dialogue
-sixth_dialogue = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Now this is the letter E", font, BLACK, KITCHEN, SHOW_LETTER, "chef", "E", None)
-test_word_input = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "This is how you spell tea", font, BLACK, KITCHEN, "chef", "TEA", SHOW_LETTER, sixth_dialogue)
-fifth_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Very good!", font, BLACK, KITCHEN, "chef", sixth_dialogue)
-fourth_dialogue = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "I am the chef, this is the letter A", font, BLACK, KITCHEN, "chef", "A", SHOW_LETTER, test_word_input)
-third_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "This is the chef", font, BLACK, KITCHEN, "manager", fourth_dialogue)
-second_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Blah, blah, Ill show you to the chef", font, BLACK, FRONT, "manager", third_dialogue)
-first_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Hello and welcome to the restaurant", font, BLACK, FRONT,  "manager", second_dialogue)
+sixth_dialogue = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Now this is the letter E", font, BLACK, KITCHEN, SHOW_LETTER, CHEF, "E", None)
+test_word_input = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "This is how you spell tea", font, BLACK, KITCHEN, CHEF, "TEA", SHOW_LETTER, sixth_dialogue)
+fifth_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Very good!", font, BLACK, KITCHEN, CHEF, sixth_dialogue)
+fourth_dialogue = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "I am the chef, this is the letter A", font, BLACK, KITCHEN, CHEF, "A", SHOW_LETTER, test_word_input)
+third_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "This is the chef", font, BLACK, KITCHEN, MANAGER, fourth_dialogue)
+second_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Blah, blah, Ill show you to the chef", font, BLACK, FRONT, MANAGER, third_dialogue)
+first_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Hello and welcome to the restaurant", font, BLACK, FRONT,  MANAGER, second_dialogue)
 
 
 
-test_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/4, "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.", font, BLACK, "front",  "manager", None)
+test_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/4, "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.", font, BLACK, "front",  MANAGER, None)
 
-#test_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "TEST1 TEST2 TEST3 TEST4 TEST5 TEST6", font, BLACK, "front",  "manager", None)
+#test_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "TEST1 TEST2 TEST3 TEST4 TEST5 TEST6", font, BLACK, "front",  MANAGER, None)
 
 #introduction dialogue
 #AEIOU
 
 
 
-#intro_24 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Great job, you'll get a hang of this in no time!", font, BLACK, KITCHEN,  "manager", intro_25)
-#intro_24 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Great job, you'll get a hang of this in no time!", font, BLACK, KITCHEN,  "manager", intro_25)
+#intro_24 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Great job, you'll get a hang of this in no time!", font, BLACK, KITCHEN,  MANAGER, intro_25)
+#intro_24 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Great job, you'll get a hang of this in no time!", font, BLACK, KITCHEN,  MANAGER, intro_25)
+intro_dishes = ["tea", "aloe", "oil", "oat"]
+def get_dish_intro():
+    chosen = random.choice(intro_dishes)
+    intro_dishes.remove(chosen)
+    return chosen
 
+intro_44 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Please go home and take a break, and be ready for another day of practise tomorrow!", font, BLACK, KITCHEN,  MANAGER, None)
+intro_43 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Well done, I think that is enough practise for today!", font, BLACK, KITCHEN,  MANAGER, intro_44)
+chosen_dish = get_dish_intro()
+intro_42 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*...*", font, BLACK, KITCHEN, CHEF, chosen_dish, SHOW_LETTER, intro_43)
+intro_41 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Lets try %s" %chosen_dish, font, BLACK, KITCHEN,  MANAGER, intro_42)
+intro_40 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Perfect! lets try another word", font, BLACK, KITCHEN,  MANAGER, intro_41)
+chosen_dish = get_dish_intro()
+intro_39 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*...*", font, BLACK, KITCHEN, CHEF, chosen_dish, SHOW_LETTER, intro_40)
+intro_38 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "First lets start with %s" %chosen_dish, font, BLACK, KITCHEN,  MANAGER, intro_39)
+intro_37 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Amazing! Now that you the vowels and a few consonants we can spell some words", font, BLACK, KITCHEN,  MANAGER, intro_38)
 
-intro_25 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*shows an U*", font, BLACK, KITCHEN, "chef", "U", not SHOW_LETTER, None)
-intro_24 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Amazing, and last but not least lets see U", font, BLACK, KITCHEN,  "manager", intro_25)
-intro_23 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*waits for O*", font, BLACK, KITCHEN, "chef", "O", not SHOW_LETTER, intro_24)
-intro_22 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Super! let us see  O", font, BLACK, KITCHEN,  "manager", intro_23)
-intro_21 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*waits for I*", font, BLACK, KITCHEN, "chef", "I", not SHOW_LETTER, intro_22)
-intro_20 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Perfect, now I", font, BLACK, KITCHEN,  "manager", intro_21)
-intro_19 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*waits for E*", font, BLACK, KITCHEN, "chef", "E", not SHOW_LETTER, intro_20)
-intro_18 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Brilliant, lets try E", font, BLACK, KITCHEN,  "manager", intro_19)
-intro_17 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*waits for A*", font, BLACK, KITCHEN, "chef", "A", not SHOW_LETTER, intro_18)
-intro_16 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Lets start with the A", font, BLACK, KITCHEN,  "manager", intro_17)
-intro_15 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Good job, now that you've done them once, lets see if you can remember them", font, BLACK, KITCHEN,  "manager", intro_16)
+intro_36 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*waits for T*", font, BLACK, KITCHEN, CHEF, "T", not SHOW_LETTER, intro_37)
+intro_35 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "And lets check the T", font, BLACK, KITCHEN,  MANAGER, intro_36)
+intro_34 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*waits for L*", font, BLACK, KITCHEN, CHEF, "L", not SHOW_LETTER, intro_35)
+intro_33 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Great! now lets see if you remember them! first the L", font, BLACK, KITCHEN,  MANAGER, intro_34)
+intro_32 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*shows an T*", font, BLACK, KITCHEN, CHEF, "T", SHOW_LETTER, intro_33)
+intro_31 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "You're really good at this! Now lets do T", font, BLACK, KITCHEN,  MANAGER, intro_32)
+intro_30 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*shows an L*", font, BLACK, KITCHEN, CHEF, "L", SHOW_LETTER, intro_31)
+intro_29 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Now let the chef show you how to make an L", font, BLACK, KITCHEN,  MANAGER, intro_30)
+intro_28 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "This way we ensure you understand how things work", font, BLACK, KITCHEN,  MANAGER, intro_29)
+intro_27 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "We want to end the day with you spelling a couple of full words", font, BLACK, KITCHEN,  MANAGER, intro_28)
+intro_26 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "You're doing well. We will teach you a couple more letters today", font, BLACK, KITCHEN,  MANAGER, intro_27)
 
+#test vowels
+intro_25 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*waits for U*", font, BLACK, KITCHEN, CHEF, "U", not SHOW_LETTER, intro_26)
+intro_24 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Amazing, and last but not least lets see U", font, BLACK, KITCHEN,  MANAGER, intro_25)
+intro_23 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*waits for O*", font, BLACK, KITCHEN, CHEF, "O", not SHOW_LETTER, intro_24)
+intro_22 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Super! let us see  O", font, BLACK, KITCHEN,  MANAGER, intro_23)
+intro_21 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*waits for I*", font, BLACK, KITCHEN, CHEF, "I", not SHOW_LETTER, intro_22)
+intro_20 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Perfect, now I", font, BLACK, KITCHEN,  MANAGER, intro_21)
+intro_19 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*waits for E*", font, BLACK, KITCHEN, CHEF, "E", not SHOW_LETTER, intro_20)
+intro_18 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Brilliant, lets try E", font, BLACK, KITCHEN,  MANAGER, intro_19)
+intro_17 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*waits for A*", font, BLACK, KITCHEN, CHEF, "A", not SHOW_LETTER, intro_18)
+intro_16 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Lets start with the A", font, BLACK, KITCHEN,  MANAGER, intro_17)
+intro_15 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Good job, now that you've done them once, lets see if you can remember them", font, BLACK, KITCHEN,  MANAGER, intro_16)
 
-intro_14 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*shows an U*", font, BLACK, KITCHEN, "chef", "U", SHOW_LETTER, intro_15)
-intro_13 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Very good, now the letter U", font, BLACK, KITCHEN,  "manager", intro_14)
-intro_12 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*shows an O*", font, BLACK, KITCHEN, "chef", "O", SHOW_LETTER, intro_13)
-intro_11 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Super! Now we do O", font, BLACK, KITCHEN,  "manager", intro_12)
-intro_10 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*shows an I*", font, BLACK, KITCHEN, "chef", "I", SHOW_LETTER, intro_11)
-intro_9 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Good job, I", font, BLACK, KITCHEN,  "manager", intro_10)
-intro_8 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*shows an E*", font, BLACK, KITCHEN, "chef", "E", SHOW_LETTER, intro_9)
-intro_7 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Very good, now the letter E", font, BLACK, KITCHEN,  "manager", intro_8)
-intro_6 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*shows an A*", font, BLACK, KITCHEN, "chef", "A", SHOW_LETTER, intro_7)
-intro_5 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2,"First, this is how you spell A, sign it back to him", font, BLACK, KITCHEN,  "manager", intro_6)
+#Learn vowels
+intro_14 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*shows a U*", font, BLACK, KITCHEN, CHEF, "U", SHOW_LETTER, intro_15)
+intro_13 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Very good, now the letter U", font, BLACK, KITCHEN,  MANAGER, intro_14)
+intro_12 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*shows an O*", font, BLACK, KITCHEN, CHEF, "O", SHOW_LETTER, intro_13)
+intro_11 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Super! Now we do O", font, BLACK, KITCHEN,  MANAGER, intro_12)
+intro_10 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*shows an I*", font, BLACK, KITCHEN, CHEF, "I", SHOW_LETTER, intro_11)
+intro_9 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Good job, I", font, BLACK, KITCHEN,  MANAGER, intro_10)
+intro_8 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*shows an E*", font, BLACK, KITCHEN, CHEF, "E", SHOW_LETTER, intro_9)
+intro_7 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Very good, now the letter E", font, BLACK, KITCHEN,  MANAGER, intro_8)
+intro_6 = dialogue.PlayerInputDialogue(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "*shows an A*", font, BLACK, KITCHEN, CHEF, "A", SHOW_LETTER, intro_7)
+intro_5 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2,"First, this is how you spell A, sign it back to him", font, BLACK, KITCHEN,  MANAGER, intro_6)
 
-intro_4 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "This is the chef, he'll now teach you the basics", font, BLACK, KITCHEN,  "manager", intro_5)
-intro_3 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Ill take you to him and teach you the basics of fingerspelling", font, BLACK, FRONT,  "manager", intro_4)
-intro_2 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Our chef here only understands sign languague and fingerspelling", font, BLACK, FRONT,  "manager", intro_3)
-intro_1 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Hello and welcome to the restaurant", font, BLACK, FRONT,  "manager", intro_2)
+intro_4 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "This is the chef, he'll now teach you the basics", font, BLACK, KITCHEN,  MANAGER, intro_5)
+intro_3 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Ill take you to him and teach you the basics of fingerspelling", font, BLACK, FRONT,  MANAGER, intro_4)
+intro_2 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Our chef here only understands sign languague and fingerspelling", font, BLACK, FRONT,  MANAGER, intro_3)
+intro_1 = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "Hello and welcome to the restaurant", font, BLACK, FRONT,  MANAGER, intro_2)
 
 
 #main menu
@@ -215,7 +251,7 @@ while run:
     if scene_state == "customer":
         screen.fill((91,91,91))
         draw_text("With customer", font, BLACK, SCREEN_WIDTH/2, SCREEN_HEIGHT/4 - SCREEN_HEIGHT/4)
-        if test1_button.draw(screen) and clicked == False:
+        '''if test1_button.draw(screen) and clicked == False:
             cust_dia = g_customer.newOrder()
             dialogue.insertDialogue(current_dialogue, current_dialogue.next, cust_dia)
             checkOrderForNewLetters(cust_dia)
@@ -225,12 +261,10 @@ while run:
             initial_diag = current_dialogue
             initial_next = current_dialogue.next
 
-            '''
-            1: Create dialogue for player to ask chef about new letter
-            2: Create dialogue for chef to show player how to make letter
-            3: player repeats letter back
+            #1: Create dialogue for player to ask chef about new letter
+            #2: Create dialogue for chef to show player how to make letter
+            #3: player repeats letter back
             
-            '''
             Latestplayer = initial_diag
             latestchef = initial_diag
 
@@ -244,11 +278,11 @@ while run:
                                                         font, 
                                                         BLACK, 
                                                         KITCHEN, 
-                                                        "chef", 
+                                                        CHEF, 
                                                         l,
                                                         SHOW_LETTER,
                                                         None)
-                #test_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 1, "TESTTESTTEST", font, BLACK, "front",  "manager", None)
+                #test_dialogue = dialogue.LinearDialogueNode(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 1, "TESTTESTTEST", font, BLACK, "front",  MANAGER, None)
 
                 dialogue.insertDialogue(latestchef, initial_next, playerDiag)
                 Latestplayer = playerDiag
@@ -262,7 +296,7 @@ while run:
 
             print(known_letters)
             print(unknown_letters)
-            print("inserted new dialogues")
+            print("inserted new dialogues")'''
 
 
 
@@ -305,7 +339,7 @@ while run:
         if menu_state == "level":
             if introduction_button.draw(screen) and clicked == False:
                 level_state = "introduction"
-                current_dialogue = test_dialogue
+                current_dialogue = intro_1
                 clicked = True
                 game_paused = False
             if lvl1_button.draw(screen) and clicked == False:
