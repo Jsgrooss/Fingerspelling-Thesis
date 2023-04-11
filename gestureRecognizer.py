@@ -167,6 +167,10 @@ class GestureRecognizer():
         # 'game settings'
         detectedSign = deque(maxlen=20)
 
+        for i in range(20):
+            detectedSign.append(1000)
+
+
         print("target is = " + target)
         print("the number is = " + str(string.ascii_uppercase.index(target)))
         imageDisplayer = fingerImageDisplayer("Eng", string.ascii_uppercase.index(target))
@@ -482,6 +486,10 @@ class GestureRecognizer():
         #  ########################################################################
         # 'game settings'
         detectedSign = deque(maxlen=20)
+
+        
+        for i in range(20):
+            detectedSign.append(1000)
 
         imageDisplayer = fingerImageDisplayer("Eng", string.ascii_uppercase.index(target[0]))
 
